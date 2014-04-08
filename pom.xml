@@ -16,7 +16,7 @@
         <dependency>
             <groupId>com.ardoq.api</groupId>
             <artifactId>client</artifactId>
-            <version>0.5.0</version>
+            <version>0.5.1</version>
         </dependency>
     </dependencies>
 
