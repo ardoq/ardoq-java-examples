@@ -8,13 +8,12 @@ import java.util.List;
 
 public class SimpleImport {
 
-    private static final String ardoqUsername = System.getenv("ardoqUsername");
+    private static final String token = System.getenv("ardoqToken");
     private static final String host = System.getenv("ardoqHost");
-    private static final String ardoqPassword = System.getenv("ardoqPassword");
 
     public static void main(String[] args) {
 
-        ArdoqClient client = new ArdoqClient(host, ardoqUsername, ardoqPassword);
+        ArdoqClient client = new ArdoqClient(host, token);
 
         Model model = client.model().getModelByName("Application service");
 
