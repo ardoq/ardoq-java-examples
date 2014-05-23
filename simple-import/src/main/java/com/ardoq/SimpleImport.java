@@ -22,10 +22,10 @@ public class SimpleImport {
         ComponentService componentService = client.component();
 
         Component webshop = componentService.createComponent(new Component("Webshop", workspace.getId(), "Webshop description"));
-        Component webShopCreateOrder = componentService.createComponent(new Component("createOrder", workspace.getId(), "Order from cart", webshop.getId()));
+        Component webShopCreateOrder = componentService.createComponent(new Component("createOrder", workspace.getId(), "Order from cart", null, webshop.getId()));
 
         Component erp = componentService.createComponent(new Component("ERP", workspace.getId(), ""));
-        Component erpCreateOrder = componentService.createComponent(new Component("createOrder", workspace.getId(), "", erp.getId()));
+        Component erpCreateOrder = componentService.createComponent(new Component("createOrder", workspace.getId(), "", null, erp.getId()));
         //Create a Synchronous integration between the Webshop:createOrder and ERP:createOrder services
         Reference createOrderRef = new Reference(workspace.getId(), "Order from cart", webShopCreateOrder.getId(), erpCreateOrder.getId(), model.getReferenceTypeByName("Synchronous"));
         createOrderRef.setReturnValue("Created order");
