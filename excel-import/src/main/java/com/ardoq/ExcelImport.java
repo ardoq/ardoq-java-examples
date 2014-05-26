@@ -48,7 +48,7 @@ public class ExcelImport {
             childCell = row.getCell(childColumn);
             if (childCell != null && parent != null) {
                 String typeId = model.getComponentTypeByName(typeRow.getCell(childColumn).toString());
-                child = componentService.createComponent(new Component(childCell.toString(), workspace.getId(), "Description", null, parent.getId()));
+                child = componentService.createComponent(new Component(childCell.toString(), workspace.getId(), "Description", typeId, parent.getId()));
                 components.put(parent.getName() + "::" + child.getName(), child.getId());
             }
             rowIndex++;
