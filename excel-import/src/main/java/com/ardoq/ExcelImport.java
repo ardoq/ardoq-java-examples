@@ -2,6 +2,7 @@ package com.ardoq;
 
 import com.ardoq.model.*;
 import com.ardoq.service.ComponentService;
+import com.ardoq.service.TagService;
 import org.apache.poi.xssf.usermodel.*;
 
 import java.io.IOException;
@@ -20,17 +21,17 @@ public class ExcelImport {
         XSSFWorkbook workbook = new XSSFWorkbook(resourceAsStream);
 
         ArdoqClient client = new ArdoqClient(host, token);
-        ComponentService componentService = client.component();
-
         Model model = client.model().getModelByName("Application service");
         Workspace workspace = client.workspace().createWorkspace(new Workspace("excel-import", model.getId(), "Description"));
 
         // Import components
         XSSFSheet componentSheet = workbook.getSheet("Components");
+        ComponentService componentService = client.component();
+
         int parentColumn = 0;
         int childColumn = 1;
 
-        HashMap<String, String> components = new HashMap<String, String>(); // name -> id
+        HashMap<String, String> components = new HashMap<String, String>(); // component path (parent::child) -> id
         XSSFRow typeRow = componentSheet.getRow(0);
         int rowIndex = 1;
         XSSFRow row = componentSheet.getRow(rowIndex);
@@ -80,7 +81,45 @@ public class ExcelImport {
             row = componentSheet.getRow(rowIndex);
         }
 
-        XSSFSheet tags = workbook.getSheet("Tags");
+        // Import tags
+        XSSFSheet tagSheet = workbook.getSheet("Tags");
+        TagService tagService = client.tag();
+        HashMap<String, Tag> tags = new HashMap<String, Tag>(); // tag name -> tag
+        Tag tag = null;
+
+        rowIndex = 1;
+        row = tagSheet.getRow(rowIndex);
+        while (row != null) {
+            int tagIndex = 2;
+            XSSFCell tagCell = row.getCell(tagIndex);
+
+            while (tagCell != null) {
+                // Get the tag, create it if it hasn't been already
+                if (tags.get(tagCell.toString()) == null) {
+                    tag = tagService.createTag(new Tag(tagCell.toString(), workspace.getId(), "Tag description"));
+                    tags.put(tagCell.toString(), tag);
+                } else {
+                    tag = tags.get(tagCell.toString());
+                }
+                // Get the component path
+                parentCell = row.getCell(parentColumn);
+                childCell = row.getCell(childColumn);
+                String componentPath = (childCell != null) ? parentCell.toString() + "::" + childCell.toString() : parentCell.toString();
+                String compId = components.get(componentPath);
+
+                // Tag component
+                System.out.println(compId);
+                tag.addComponent(compId);
+                tagService.updateTag(tag.getId(), tag);
+
+                tagIndex++;
+                tagCell = row.getCell(tagIndex);
+            }
+            rowIndex++;
+            row = tagSheet.getRow(rowIndex);
+        }
+
+        // Import fields
         XSSFSheet fields = workbook.getSheet("Fields");
     }
 }
