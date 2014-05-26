@@ -2,12 +2,15 @@ package com.ardoq;
 
 import com.ardoq.model.*;
 import com.ardoq.service.ComponentService;
+import com.ardoq.service.FieldService;
 import com.ardoq.service.TagService;
 import org.apache.poi.xssf.usermodel.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 public class ExcelImport {
 
@@ -85,7 +88,7 @@ public class ExcelImport {
         XSSFSheet tagSheet = workbook.getSheet("Tags");
         TagService tagService = client.tag();
         HashMap<String, Tag> tags = new HashMap<String, Tag>(); // tag name -> tag
-        Tag tag = null;
+        Tag tag;
 
         rowIndex = 1;
         row = tagSheet.getRow(rowIndex);
@@ -101,15 +104,14 @@ public class ExcelImport {
                 } else {
                     tag = tags.get(tagCell.toString());
                 }
-                // Get the component path
+                // Get the component id from the path
                 parentCell = row.getCell(parentColumn);
                 childCell = row.getCell(childColumn);
                 String componentPath = (childCell != null) ? parentCell.toString() + "::" + childCell.toString() : parentCell.toString();
-                String compId = components.get(componentPath);
+                String componentId = components.get(componentPath);
 
                 // Tag component
-                System.out.println(compId);
-                tag.addComponent(compId);
+                tag.addComponent(componentId);
                 tagService.updateTag(tag.getId(), tag);
 
                 tagIndex++;
@@ -120,6 +122,66 @@ public class ExcelImport {
         }
 
         // Import fields
-        XSSFSheet fields = workbook.getSheet("Fields");
+        XSSFSheet fieldSheet = workbook.getSheet("Fields");
+        FieldService fieldService = client.field();
+
+        int fieldColumn = 2;
+        int fieldTypeColumn = 3;
+
+        HashMap<String, FieldType> stringToFieldType = new HashMap<String, FieldType>() {{
+            put("email", FieldType.EMAIL);
+            put("Text", FieldType.TEXT);
+            put("Textarea", FieldType.TEXTAREA);
+            put("DateTime", FieldType.DATETIME);
+            put("Checkbox", FieldType.CHECKBOX);
+            put("Number", FieldType.NUMBER);
+            put("List", FieldType.LIST);
+            put("url", FieldType.URL);
+            put("email", FieldType.EMAIL);
+        }};
+        HashMap<String, Field> fields = getFieldsForModel(fieldService.getAllFields(), model.getId());
+        Field field;
+
+        rowIndex = 1;
+        row = fieldSheet.getRow(rowIndex);
+        while (row != null) {
+            FieldType fieldType = null;
+            XSSFCell fieldCell = row.getCell(fieldColumn);
+            XSSFCell fieldTypeCell = row.getCell(fieldTypeColumn);
+            if (fieldTypeCell != null) {
+                fieldType = stringToFieldType.get(fieldTypeCell.toString());
+            }
+            if (fieldCell != null && fieldType != null) {
+                String fieldName = fieldCell.toString().split("=")[0];
+                String fieldValue = fieldCell.toString().split("=")[1];
+
+                // Get the component type from the path
+                parentCell = row.getCell(parentColumn);
+                childCell = row.getCell(childColumn);
+                String componentPath = (childCell != null) ? parentCell.toString() + "::" + childCell.toString() : parentCell.toString();
+                Component component = componentService.getComponentById(components.get(componentPath));
+
+                if (fields.get(fieldName) == null) {
+                    List<String> componentTypes = Arrays.asList(component.getTypeId());
+                    field = fieldService.createField(new Field(fieldName, "", model.getId(), componentTypes, fieldType));
+                    fields.put(fieldName, field);
+                } else {
+                    field = fields.get(fieldName);
+                }
+                // Add values
+            }
+            rowIndex++;
+            row = fieldSheet.getRow(rowIndex);
+        }
+    }
+
+    private static HashMap<String, Field> getFieldsForModel(List<Field> allFields, String modelId) {
+        HashMap<String, Field> fields = new HashMap<String, Field>();
+        for (Field field : allFields) {
+            if(field.getModel() == modelId) {
+                fields.put(field.getName(), field);
+            }
+        }
+        return fields;
     }
 }
