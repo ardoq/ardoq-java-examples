@@ -153,22 +153,22 @@ public class ExcelImport {
             }
             if (fieldCell != null && fieldType != null) {
                 String fieldName = fieldCell.toString().split("=")[0];
-                String fieldValue = fieldCell.toString().split("=")[1];
+                String fieldValue = fieldCell.toString().split("=", 2)[1];
 
                 // Get the component type from the path
                 parentCell = row.getCell(parentColumn);
                 childCell = row.getCell(childColumn);
                 String componentPath = (childCell != null) ? parentCell.toString() + "::" + childCell.toString() : parentCell.toString();
                 Component component = componentService.getComponentById(components.get(componentPath));
-
                 if (fields.get(fieldName) == null) {
                     List<String> componentTypes = Arrays.asList(component.getTypeId());
                     field = fieldService.createField(new Field(fieldName, "", model.getId(), componentTypes, fieldType));
                     fields.put(fieldName, field);
                 } else {
                     field = fields.get(fieldName);
+                    // TODO: Add component type to allowed component types in field
                 }
-                // Add values
+                // TODO: Set field values for given component
             }
             rowIndex++;
             row = fieldSheet.getRow(rowIndex);
